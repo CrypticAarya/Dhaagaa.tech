@@ -1,53 +1,65 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 
 export default function CustomCursor() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
+  const dotRef = useRef<HTMLDivElement>(null);
+  const isHovering = useRef(false);
 
   useEffect(() => {
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    let mouseX = -100;
+    let mouseY = -100;
+    let rafId: number;
+
+    const moveCursor = (e: MouseEvent) => {
+      // clientX/Y is always viewport-relative — correct regardless of scroll
+      mouseX = e.clientX;
+      mouseY = e.clientY;
     };
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (
+      const isInteractive =
         target.tagName.toLowerCase() === 'a' ||
         target.tagName.toLowerCase() === 'button' ||
-        target.closest('a') ||
-        target.closest('button') ||
-        target.dataset.cursor === 'hover'
-      ) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
+        !!target.closest('a') ||
+        !!target.closest('button') ||
+        target.dataset.cursor === 'hover';
+
+      if (isInteractive !== isHovering.current) {
+        isHovering.current = isInteractive;
+        if (dotRef.current) {
+          dotRef.current.style.transform = `translate(${mouseX - 12}px, ${mouseY - 12}px) scale(${isInteractive ? 2.2 : 1})`;
+        }
       }
     };
 
-    window.addEventListener('mousemove', updateMousePosition);
-    window.addEventListener('mouseover', handleMouseOver);
+    // Use rAF to keep cursor movement silky smooth
+    const loop = () => {
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${mouseX - 12}px, ${mouseY - 12}px) scale(${isHovering.current ? 2.2 : 1})`;
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+
+    rafId = requestAnimationFrame(loop);
+
+    window.addEventListener('mousemove', moveCursor, { passive: true });
+    window.addEventListener('mouseover', handleMouseOver, { passive: true });
 
     return () => {
-      window.removeEventListener('mousemove', updateMousePosition);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('mousemove', moveCursor);
       window.removeEventListener('mouseover', handleMouseOver);
     };
   }, []);
 
   return (
-    <motion.div
-      className="fixed top-0 left-0 w-6 h-6 bg-accent rounded-full pointer-events-none z-[9999] mix-blend-difference flex items-center justify-center"
-      animate={{
-        x: mousePosition.x - 12,
-        y: mousePosition.y - 12,
-        scale: isHovering ? 2.5 : 1,
-        backgroundColor: isHovering ? '#F5F1E8' : '#F5F1E8',
-      }}
-      transition={{
-        type: 'spring',
-        stiffness: 500,
-        damping: 28,
-        mass: 0.5,
+    <div
+      ref={dotRef}
+      className="fixed top-0 left-0 w-6 h-6 rounded-full pointer-events-none z-[9999] mix-blend-difference"
+      style={{
+        backgroundColor: '#F5F1E8',
+        willChange: 'transform',
+        transition: 'transform 0.12s ease, scale 0.15s ease',
       }}
     />
   );
