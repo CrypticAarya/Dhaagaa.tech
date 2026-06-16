@@ -36,7 +36,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h4 className="text-xs tracking-widest text-gray-500 uppercase font-medium">Contact</h4>
             <ul className="space-y-2 text-lg">
-              <li><a href="mailto:support@dhaagaa.tech " className="hover:text-accent transition-colors" data-cursor="hover">[EMAIL_ADDRESS]</a></li>
+              <li><a href="mailto:support@dhaagaa.tech " className="hover:text-accent transition-colors" data-cursor="hover">Email</a></li>
             </ul>
           </div>
         </div>
